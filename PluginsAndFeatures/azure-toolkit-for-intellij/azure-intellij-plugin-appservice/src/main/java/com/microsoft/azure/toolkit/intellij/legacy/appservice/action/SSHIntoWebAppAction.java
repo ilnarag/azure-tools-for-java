@@ -47,7 +47,7 @@ public class SSHIntoWebAppAction {
     private static final String WEB_APP_DOCKER_PREFIX = "DOCKER|";
     private static final String CMD_SSH_TO_LOCAL_PROXY =
             "ssh -o StrictHostKeyChecking=no -o \"UserKnownHostsFile /dev/null\" -o \"LogLevel ERROR\" %s@127.0.0.1 -p %d";
-
+    private static final Integer TERMINAL_MAX_SIZE = 1024 * 8;
     private static final String WEBAPP_TERMINAL_TABLE_NAME = "SSH - %s";
     private static final String RESOURCE_GROUP_PATH_PREFIX = "resourceGroups/";
     private static final String RESOURCE_ELEMENT_PATTERN = "[^/]+";
@@ -131,12 +131,14 @@ public class SSHIntoWebAppAction {
         final int interval = 500;
         final int times = 30000 / interval;
         while (count++ < times) {
-            final AbstractList<Byte> outputCache = (AbstractList<Byte>) FieldUtils.readField(connector, "outputCache", true);
-            Byte[] bytes = new Byte[outputCache.size()];
-            bytes = outputCache.toArray(bytes);
-            final byte[] myBuf = ArrayUtils.toPrimitive(bytes);
-            if (myBuf != null && new String(myBuf, StandardCharsets.UTF_8).contains("password:")) {
-                return true;
+            try {
+                final char[] result = new char[TERMINAL_MAX_SIZE];
+                connector.read(result, 0, TERMINAL_MAX_SIZE -1 );
+                if (new String(result).contains("password:")) {
+                    return true;
+                }
+            } catch (final IOException ignore) {
+                continue;
             }
             Thread.sleep(interval);
         }
