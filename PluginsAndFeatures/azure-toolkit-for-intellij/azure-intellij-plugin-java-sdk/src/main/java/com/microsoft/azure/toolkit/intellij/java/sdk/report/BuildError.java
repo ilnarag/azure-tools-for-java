@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.microsoft.azure.intellij.plugin.java.sdk.report;
+package com.microsoft.azure.toolkit.intellij.java.sdk.report;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Class to represent the build errors.
@@ -77,5 +78,21 @@ public class BuildError {
      */
     public List<String> getAdditionalDetails() {
         return additionalDetails;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BuildError that = (BuildError) o;
+        return Objects.equals(message, that.message)
+                && Objects.equals(code, that.code)
+                && level == that.level
+                && Objects.equals(additionalDetails, that.additionalDetails);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(message, code, level, additionalDetails);
     }
 }

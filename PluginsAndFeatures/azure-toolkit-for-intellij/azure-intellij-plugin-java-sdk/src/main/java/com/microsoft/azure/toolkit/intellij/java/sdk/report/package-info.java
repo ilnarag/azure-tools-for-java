@@ -4,4 +4,4 @@
 /**
  * Package containing models used by the Azure SDK Build Tool.
  */
-package com.microsoft.azure.intellij.plugin.java.sdk.report;
+package com.microsoft.azure.toolkit.intellij.java.sdk.report;

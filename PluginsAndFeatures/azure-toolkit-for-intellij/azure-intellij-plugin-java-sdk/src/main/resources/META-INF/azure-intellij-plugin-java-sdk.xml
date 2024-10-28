@@ -3,15 +3,6 @@
     <depends>com.intellij.modules.xml</depends>
     <depends>com.intellij.modules.java</depends>
 
-<!--    <actions>-->
-<!--        <action-->
-<!--                class="com.microsoft.azure.toolkit.intellij.java.sdk.experiment.ExperimentalFeature"-->
-<!--                id="AzSdkHelpAction"-->
-<!--                text="Ask Azure SDK Help">-->
-<!--            <add-to-group group-id="ToolsMenu" anchor="last" />-->
-<!--        </action>-->
-<!--    </actions>-->
-
     <extensions defaultExtensionNs="com.intellij">
         <localInspection
                 language="XML"
@@ -20,11 +11,12 @@
                 groupName="Maven"
                 enabledByDefault="true"
                 level="WARNING"
-                implementationClass="com.microsoft.azure.intellij.plugin.java.sdk.MavenProjectInspection">
-            <class>com.microsoft.azure.intellij.plugin.java.sdk.MavenProjectInspection</class>
+                implementationClass="com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectInspection">
+            <class>com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectInspection</class>
         </localInspection>
 
-        <postStartupActivity implementation="com.microsoft.azure.intellij.plugin.java.sdk.ProjectInspection"/>
+        <registryKey key="Azure SDK Report Enabled" description="Send Azure SDK Report to Microsoft" restartRequired="false" defaultValue="true"/>
+        <postStartupActivity implementation="com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectReportGenerator"/>
 
     </extensions>
 </idea-plugin>

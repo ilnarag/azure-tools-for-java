@@ -1,4 +1,4 @@
-package com.microsoft.azure.intellij.plugin.java.sdk;
+package com.microsoft.azure.toolkit.intellij.java.sdk;
 
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.codeInspection.XmlSuppressableInspectionTool;

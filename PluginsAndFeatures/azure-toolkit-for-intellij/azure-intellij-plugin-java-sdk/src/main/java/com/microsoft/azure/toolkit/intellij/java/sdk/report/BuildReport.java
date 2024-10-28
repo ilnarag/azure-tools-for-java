@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.microsoft.azure.intellij.plugin.java.sdk.report;
+package com.microsoft.azure.toolkit.intellij.java.sdk.report;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The build report that contains detailed information about the build including failure messages, recommended
@@ -43,6 +44,7 @@ public class BuildReport {
 
     /**
      * Returns the list of build errors.
+     *
      * @return The list of build errors.
      */
     public List<BuildError> getErrors() {
@@ -51,6 +53,7 @@ public class BuildReport {
 
     /**
      * Returns the version of the BOM used to build the project.
+     *
      * @return The version of the BOM used to build the project.
      */
     public String getBomVersion() {
@@ -59,6 +62,7 @@ public class BuildReport {
 
     /**
      * The list of Azure dependencis used by the project.
+     *
      * @return The list of Azure dependencies used by the project.
      */
     public List<String> getAzureDependencies() {
@@ -67,6 +71,7 @@ public class BuildReport {
 
     /**
      * Adds a build error to the report.
+     *
      * @param error The build error to add.
      */
     public void addError(BuildError error) {
@@ -75,6 +80,7 @@ public class BuildReport {
 
     /**
      * Sets the list of service method calls.
+     *
      * @param serviceMethodCalls the serviceMethodCalls to set
      */
     public void setServiceMethodCalls(List<MethodCallDetails> serviceMethodCalls) {
@@ -83,6 +89,7 @@ public class BuildReport {
 
     /**
      * Sets the list of beta method calls.
+     *
      * @param betaMethodCalls the betaMethodCalls to set.
      */
     public void setBetaMethodCalls(List<MethodCallDetails> betaMethodCalls) {
@@ -91,6 +98,7 @@ public class BuildReport {
 
     /**
      * Sets the list of outdated direct dependencies.
+     *
      * @param outdatedDirectDependencies the outdatedDirectDependencies to set
      */
     public void setOutdatedDirectDependencies(List<OutdatedDependency> outdatedDirectDependencies) {
@@ -99,6 +107,7 @@ public class BuildReport {
 
     /**
      * Returns the outdated direct dependencies.
+     *
      * @return the outdated direct dependencies.
      */
     public List<OutdatedDependency> getOutdatedDirectDependencies() {
@@ -107,6 +116,7 @@ public class BuildReport {
 
     /**
      * Sets the list of outdated transitive dependencies.
+     *
      * @param outdatedTransitiveDependencies the outdated transitive dependencies to set
      */
     public void setOutdatedTransitiveDependencies(List<OutdatedDependency> outdatedTransitiveDependencies) {
@@ -115,6 +125,7 @@ public class BuildReport {
 
     /**
      * Returns the outdated transitive dependencies.
+     *
      * @return the outdated transitive dependencies.
      */
     public List<OutdatedDependency> getOutdatedTransitiveDependencies() {
@@ -123,6 +134,7 @@ public class BuildReport {
 
     /**
      * Sets the version of the BOM used to build the project.
+     *
      * @param bomVersion the bomVersion to set
      */
     public void setBomVersion(String bomVersion) {
@@ -131,6 +143,7 @@ public class BuildReport {
 
     /**
      * Sets the list of Azure dependencies used by the project.
+     *
      * @param azureDependencies the azureDependencies to set
      */
     public void setAzureDependencies(List<String> azureDependencies) {
@@ -139,6 +152,7 @@ public class BuildReport {
 
     /**
      * Returns the list of service method calls.
+     *
      * @return the serviceMethodCalls
      */
     public List<MethodCallDetails> getServiceMethodCalls() {
@@ -147,6 +161,7 @@ public class BuildReport {
 
     /**
      * Returns the list of beta method calls.
+     *
      * @return the betaMethodCalls
      */
     public List<MethodCallDetails> getBetaMethodCalls() {
@@ -155,6 +170,7 @@ public class BuildReport {
 
     /**
      * Sets the groupId of the project.
+     *
      * @param groupId the groupId to set
      */
     public void setGroupId(String groupId) {
@@ -163,6 +179,7 @@ public class BuildReport {
 
     /**
      * Returns the groupId of the project.
+     *
      * @return the groupId
      */
     public String getGroupId() {
@@ -171,6 +188,7 @@ public class BuildReport {
 
     /**
      * Sets the artifactId of the project.
+     *
      * @param artifactId the artifactId to set
      */
     public void setArtifactId(String artifactId) {
@@ -179,6 +197,7 @@ public class BuildReport {
 
     /**
      * Returns the artifactId of the project.
+     *
      * @return the artifactId
      */
     public String getArtifactId() {
@@ -187,6 +206,7 @@ public class BuildReport {
 
     /**
      * Sets the version of the project.
+     *
      * @param version the version to set
      */
     public void setVersion(String version) {
@@ -195,9 +215,40 @@ public class BuildReport {
 
     /**
      * Returns the version of the project.
+     *
      * @return the version
      */
     public String getVersion() {
         return version;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final BuildReport that = (BuildReport) o;
+        return Objects.equals(groupId, that.groupId)
+                && Objects.equals(artifactId, that.artifactId)
+                && Objects.equals(version, that.version)
+                && Objects.equals(bomVersion, that.bomVersion)
+                && Objects.equals(azureDependencies, that.azureDependencies)
+                && Objects.equals(outdatedDirectDependencies, that.outdatedDirectDependencies)
+                && Objects.equals(outdatedTransitiveDependencies, that.outdatedTransitiveDependencies)
+                && Objects.equals(serviceMethodCalls, that.serviceMethodCalls)
+                && Objects.equals(betaMethodCalls, that.betaMethodCalls)
+                && Objects.equals(errors, that.errors);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupId, artifactId, version, bomVersion, azureDependencies, outdatedDirectDependencies,
+                outdatedTransitiveDependencies, serviceMethodCalls, betaMethodCalls, errors);
     }
 }
