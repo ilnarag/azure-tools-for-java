@@ -1,4 +1,4 @@
-package com.microsoft.azure.toolkit.intellij.java.sdk.utils;
+package com.microsoft.azure.toolkit.intellij.java.sdk.models;
 
 import java.time.OffsetDateTime;
 

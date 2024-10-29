@@ -1,5 +1,6 @@
 package com.microsoft.azure.toolkit.intellij.java.sdk.utils;
 
+import com.microsoft.azure.toolkit.intellij.java.sdk.models.MavenArtifactDetails;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -67,8 +68,6 @@ public final class MavenUtils {
                             }
                         }
                         latestVersion = latestVersion == null ? latestBetaVersion : latestVersion;
-
-                        System.out.println("The latest version of " + artifactId + " is " + latestVersion);
                         if (mavenArtifactDetails == null) {
                             mavenArtifactDetails = new MavenArtifactDetails(groupId, artifactId);
                         }
@@ -78,10 +77,10 @@ public final class MavenUtils {
                         return latestVersion;
                     }
                 } else {
-                    System.out.println("Got a non-successful response for  " + artifactId + ": " + responseCode);
+                    System.out.println("Unable to get Maven metadata for " + artifactId + ": " + responseCode);
                 }
-            } catch (ParserConfigurationException | IOException | SAXException exception) {
-                System.out.println("Got error getting latest maven dependency version. " + exception.getMessage());
+            } catch (final ParserConfigurationException | IOException | SAXException exception) {
+                System.out.println("Error getting latest maven dependency version. " + exception.getMessage());
             } finally {
                 if (connection != null) {
                     // closes the input streams and discards the socket
