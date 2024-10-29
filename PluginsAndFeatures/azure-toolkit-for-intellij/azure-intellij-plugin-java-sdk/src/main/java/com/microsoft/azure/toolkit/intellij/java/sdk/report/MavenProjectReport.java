@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * The build report that contains detailed information about the build including failure messages, recommended
+ * The project report that contains detailed information about the project including error messages, recommended
  * changes and Azure SDK usage.
  */
-public class BuildReport {
+public class MavenProjectReport {
     @JsonProperty
     private String groupId;
     @JsonProperty
@@ -33,12 +33,12 @@ public class BuildReport {
     @JsonProperty
     private List<MethodCallDetails> betaMethodCalls;
     @JsonProperty
-    private final List<BuildError> errors;
+    private final List<Error> errors;
 
     /**
-     * Creates an instance of {@link BuildReport}.
+     * Creates an instance of {@link MavenProjectReport}.
      */
-    public BuildReport() {
+    public MavenProjectReport() {
         this.errors = new ArrayList<>();
     }
 
@@ -47,7 +47,7 @@ public class BuildReport {
      *
      * @return The list of build errors.
      */
-    public List<BuildError> getErrors() {
+    public List<Error> getErrors() {
         return errors;
     }
 
@@ -74,7 +74,7 @@ public class BuildReport {
      *
      * @param error The build error to add.
      */
-    public void addError(BuildError error) {
+    public void addError(Error error) {
         errors.add(error);
     }
 
@@ -233,7 +233,7 @@ public class BuildReport {
             return false;
         }
 
-        final BuildReport that = (BuildReport) o;
+        final MavenProjectReport that = (MavenProjectReport) o;
         return Objects.equals(groupId, that.groupId)
                 && Objects.equals(artifactId, that.artifactId)
                 && Objects.equals(version, that.version)

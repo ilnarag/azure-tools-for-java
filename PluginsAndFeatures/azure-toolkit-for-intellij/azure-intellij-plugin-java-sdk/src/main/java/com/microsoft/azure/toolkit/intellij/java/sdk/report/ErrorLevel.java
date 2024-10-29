@@ -4,9 +4,9 @@
 package com.microsoft.azure.toolkit.intellij.java.sdk.report;
 
 /**
- * Enumeration of build error severity level.
+ * Enumeration of error severity level.
  */
-public enum BuildErrorLevel {
+public enum ErrorLevel {
     ERROR,
     WARNING;
 }

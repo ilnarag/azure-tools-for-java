@@ -10,38 +10,38 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Class to represent the build errors.
+ * Class to represent the project errors.
  */
-public class BuildError {
+public class Error {
     @JsonIgnore
     private String message;
     @JsonProperty
-    private BuildErrorCode code;
+    private ErrorCode code;
     @JsonProperty
-    private BuildErrorLevel level;
+    private ErrorLevel level;
     @JsonProperty
     private List<String> additionalDetails;
 
     /**
-     * Creates an instance of {@link BuildError}.
+     * Creates an instance of {@link Error}.
      * @param message The error message.
-     * @param code The {@link BuildErrorCode error code}.
-     * @param level The {@link BuildErrorLevel error level}.
+     * @param code The {@link ErrorCode error code}.
+     * @param level The {@link ErrorLevel error level}.
      */
-    public BuildError(String message, BuildErrorCode code, BuildErrorLevel level) {
+    public Error(String message, ErrorCode code, ErrorLevel level) {
         this.message = message;
         this.code = code;
         this.level = level;
     }
 
     /**
-     * Creates an instance of {@link BuildError}.
+     * Creates an instance of {@link Error}.
      * @param message The error message.
-     * @param code The {@link BuildErrorCode error code}.
-     * @param level The {@link BuildErrorLevel error level}.
+     * @param code The {@link ErrorCode error code}.
+     * @param level The {@link ErrorLevel error level}.
      * @param additionalDetails Additional details about the error.
      */
-    public BuildError(String message, BuildErrorCode code, BuildErrorLevel level, List<String> additionalDetails) {
+    public Error(String message, ErrorCode code, ErrorLevel level, List<String> additionalDetails) {
         this.message = message;
         this.code = code;
         this.level = level;
@@ -60,7 +60,7 @@ public class BuildError {
      * Returns the error code.
      * @return the error code.
      */
-    public BuildErrorCode getCode() {
+    public ErrorCode getCode() {
         return code;
     }
 
@@ -68,7 +68,7 @@ public class BuildError {
      * Returns the error severity level.
      * @return the error severity level.
      */
-    public BuildErrorLevel getLevel() {
+    public ErrorLevel getLevel() {
         return level;
     }
 
@@ -84,7 +84,7 @@ public class BuildError {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final BuildError that = (BuildError) o;
+        final Error that = (Error) o;
         return Objects.equals(message, that.message)
                 && Objects.equals(code, that.code)
                 && level == that.level

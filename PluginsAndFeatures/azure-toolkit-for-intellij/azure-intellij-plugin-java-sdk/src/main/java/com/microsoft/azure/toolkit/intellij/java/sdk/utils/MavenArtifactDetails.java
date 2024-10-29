@@ -2,13 +2,13 @@ package com.microsoft.azure.toolkit.intellij.java.sdk.utils;
 
 import java.time.OffsetDateTime;
 
-public final class MavenArtifact {
+public final class MavenArtifactDetails {
     private final String groupId;
     private final String artifactId;
     private String version;
     private OffsetDateTime lastUpdated;
 
-    public MavenArtifact(final String groupId, final String artifactId) {
+    public MavenArtifactDetails(final String groupId, final String artifactId) {
         this.groupId = groupId;
         this.artifactId = artifactId;
     }

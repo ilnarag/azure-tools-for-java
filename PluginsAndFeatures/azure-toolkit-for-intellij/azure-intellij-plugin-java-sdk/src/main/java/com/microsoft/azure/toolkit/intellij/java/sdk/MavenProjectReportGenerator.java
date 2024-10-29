@@ -22,6 +22,7 @@ import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.telemetry.EventTelemetry;
 import com.microsoft.azure.toolkit.intellij.java.sdk.report.*;
+import com.microsoft.azure.toolkit.intellij.java.sdk.report.Error;
 import com.microsoft.azure.toolkit.intellij.java.sdk.utils.MavenUtils;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
@@ -49,7 +50,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     };
     public static final String AZURE_SDK_REPORT_ENABLED = "Azure SDK Report Enabled";
 
-    private final AtomicReference<BuildReport> currentBuildReport;
+    private final AtomicReference<MavenProjectReport> currentBuildReport;
     private final TelemetryClient telemetryClient;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -79,13 +80,13 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     private void generateReport(@Nonnull Project project) {
         if (Registry.is(AZURE_SDK_REPORT_ENABLED, true)) {
             try {
-                final BuildReport buildReport = new BuildReport();
-                inspectPomFile(project, buildReport);
-                inspectJavaFiles(project, buildReport);
-                if (!buildReport.equals(currentBuildReport.get())) {
-                    System.out.println(OBJECT_MAPPER.writeValueAsString(buildReport));
-                    sendReportToAppInsights(buildReport);
-                    currentBuildReport.set(buildReport);
+                final MavenProjectReport mavenProjectReport = new MavenProjectReport();
+                inspectPomFile(project, mavenProjectReport);
+                inspectJavaFiles(project, mavenProjectReport);
+                if (!mavenProjectReport.equals(currentBuildReport.get())) {
+                    System.out.println(OBJECT_MAPPER.writeValueAsString(mavenProjectReport));
+                    sendReportToAppInsights(mavenProjectReport);
+                    currentBuildReport.set(mavenProjectReport);
                 } else {
                     System.out.println("No change to build report. Skipped sending report to Application Insights");
                 }
@@ -97,7 +98,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         }
     }
 
-    private void sendReportToAppInsights(BuildReport report) {
+    private void sendReportToAppInsights(MavenProjectReport report) {
         try {
             final EventTelemetry telemetry = new EventTelemetry("azure-sdk-java-intellij-telemetry");
             telemetry.getProperties().putAll(getCustomEventProperties(report));
@@ -109,7 +110,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         }
     }
 
-    private Map<String, String> getCustomEventProperties(BuildReport report) {
+    private Map<String, String> getCustomEventProperties(MavenProjectReport report) {
         final Map<String, Object> properties = OBJECT_MAPPER.convertValue(report, MAP_TYPE_REFERENCE);
         final Map<String, String> customEventProperties = new HashMap<>(properties.size());
         // AppInsights customEvents table does not support nested JSON objects in "properties" field
@@ -124,7 +125,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         return customEventProperties;
     }
 
-    private void inspectJavaFiles(@Nonnull Project project, BuildReport buildReport) {
+    private void inspectJavaFiles(@Nonnull Project project, MavenProjectReport mavenProjectReport) {
         final Collection<VirtualFile> javaFiles = FileTypeIndex.getFiles(com.intellij.ide.highlighter.JavaFileType.INSTANCE, GlobalSearchScope.projectScope(project));
         final Map<String, Integer> methodCallFrequency = new HashMap<>();
 
@@ -157,10 +158,10 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                         .setMethodName(entry.getKey())
                         .setCallFrequency(entry.getValue()))
                 .toList();
-        buildReport.setServiceMethodCalls(methodCallDetails);
+        mavenProjectReport.setServiceMethodCalls(methodCallDetails);
     }
 
-    private void inspectPomFile(@Nonnull Project project, BuildReport buildReport) {
+    private void inspectPomFile(@Nonnull Project project, MavenProjectReport mavenProjectReport) {
         FileTypeIndex.getFiles(XmlFileType.INSTANCE, GlobalSearchScope.projectScope(project))
                 .forEach(virtualFile -> {
                     final PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
@@ -181,17 +182,17 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                         final String groupId = rootTag.findFirstSubTag("groupId").getValue().getText();
                         final String version = rootTag.findFirstSubTag("version").getValue().getText();
 
-                        buildReport.setArtifactId(getMd5(artifactId));
-                        buildReport.setGroupId(getMd5(groupId));
-                        buildReport.setVersion(getMd5(version));
+                        mavenProjectReport.setArtifactId(getMd5(artifactId));
+                        mavenProjectReport.setGroupId(getMd5(groupId));
+                        mavenProjectReport.setVersion(getMd5(version));
 
-                        checkDependencyManagement(rootTag, buildReport);
-                        checkDependencies(rootTag, buildReport);
+                        checkDependencyManagement(rootTag, mavenProjectReport);
+                        checkDependencies(rootTag, mavenProjectReport);
                     }
                 });
     }
 
-    private void checkDependencyManagement(XmlTag rootTag, BuildReport buildReport) {
+    private void checkDependencyManagement(XmlTag rootTag, MavenProjectReport mavenProjectReport) {
         final XmlTag dependencyManagement = rootTag.findFirstSubTag("dependencyManagement");
         if (dependencyManagement != null) {
             final XmlTag dependenciesTag = dependencyManagement.findFirstSubTag("dependencies");
@@ -210,9 +211,9 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                         final String latestArtifactVersion = MavenUtils.getLatestArtifactVersion(groupId, artifactId);
 
                         if (versionId != null && !versionId.equals(latestArtifactVersion)) {
-                            buildReport.setBomVersion(versionId);
-                            buildReport.addError(new BuildError("Newer version of azure-sdk-bom available",
-                                    BuildErrorCode.OUTDATED_DEPENDENCY, BuildErrorLevel.WARNING,
+                            mavenProjectReport.setBomVersion(versionId);
+                            mavenProjectReport.addError(new Error("Newer version of azure-sdk-bom available",
+                                    ErrorCode.OUTDATED_DEPENDENCY, ErrorLevel.WARNING,
                                     List.of(groupId + ":" + artifactId + ":" + versionId)));
                         }
                     }
@@ -221,11 +222,11 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         }
     }
 
-    private void checkDependencies(XmlTag rootTag, BuildReport buildReport) {
+    private void checkDependencies(XmlTag rootTag, MavenProjectReport mavenProjectReport) {
         final XmlTag dependenciesTag = rootTag.findFirstSubTag("dependencies");
 
         final List<String> azureDependencies = new ArrayList<>();
-        buildReport.setAzureDependencies(azureDependencies);
+        mavenProjectReport.setAzureDependencies(azureDependencies);
 
         if (dependenciesTag != null) {
             final XmlTag[] dependencyTags = dependenciesTag.findSubTags("dependency");
@@ -242,13 +243,13 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                 }
 
                 if (AZURE_GROUP_ID.equals(groupId) && versionId != null && !versionId.contains("beta")) {
-                    buildReport.addError(new BuildError("Use Azure SDK Bom (azure-sdk-bom) instead of specifying version in dependency tag",
-                            BuildErrorCode.BOM_VERSION_OVERRIDDEN, BuildErrorLevel.WARNING));
+                    mavenProjectReport.addError(new Error("Use Azure SDK Bom (azure-sdk-bom) instead of specifying version in dependency tag",
+                            ErrorCode.BOM_VERSION_OVERRIDDEN, ErrorLevel.WARNING));
                 }
 
                 if (AZURE_GROUP_ID.equals(groupId) && versionId != null && versionId.contains("beta")) {
-                    buildReport.addError(new BuildError("Using a beta version in production is not recommended. Please use a stable version.",
-                            BuildErrorCode.BETA_DEPENDENCY_USED, BuildErrorLevel.WARNING));
+                    mavenProjectReport.addError(new Error("Using a beta version in production is not recommended. Please use a stable version.",
+                            ErrorCode.BETA_DEPENDENCY_USED, ErrorLevel.WARNING));
                 }
             }
         }

@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class MavenUtils {
-    private static final Map<String, MavenArtifact> MAVEN_ARTIFACTS = new ConcurrentHashMap<>();
+    private static final Map<String, MavenArtifactDetails> MAVEN_ARTIFACTS = new ConcurrentHashMap<>();
 
     private MavenUtils() {
     }
@@ -31,8 +31,8 @@ public final class MavenUtils {
      * version.
      */
     public static String getLatestArtifactVersion(String groupId, String artifactId) {
-        MavenArtifact mavenArtifact = MAVEN_ARTIFACTS.get(groupId + ":" + artifactId);
-        if (mavenArtifact == null || mavenArtifact.getLastUpdated().isBefore(OffsetDateTime.now().minusDays(1))) {
+        MavenArtifactDetails mavenArtifactDetails = MAVEN_ARTIFACTS.get(groupId + ":" + artifactId);
+        if (mavenArtifactDetails == null || mavenArtifactDetails.getLastUpdated().isBefore(OffsetDateTime.now().minusDays(1))) {
             HttpURLConnection connection = null;
             try {
                 groupId = groupId.replace(".", "/");
@@ -69,12 +69,12 @@ public final class MavenUtils {
                         latestVersion = latestVersion == null ? latestBetaVersion : latestVersion;
 
                         System.out.println("The latest version of " + artifactId + " is " + latestVersion);
-                        if (mavenArtifact == null) {
-                            mavenArtifact = new MavenArtifact(groupId, artifactId);
+                        if (mavenArtifactDetails == null) {
+                            mavenArtifactDetails = new MavenArtifactDetails(groupId, artifactId);
                         }
-                        mavenArtifact.setLastUpdated(OffsetDateTime.now());
-                        mavenArtifact.setVersion(latestVersion);
-                        MAVEN_ARTIFACTS.put(groupId + ":" + artifactId, mavenArtifact);
+                        mavenArtifactDetails.setLastUpdated(OffsetDateTime.now());
+                        mavenArtifactDetails.setVersion(latestVersion);
+                        MAVEN_ARTIFACTS.put(groupId + ":" + artifactId, mavenArtifactDetails);
                         return latestVersion;
                     }
                 } else {
@@ -88,10 +88,10 @@ public final class MavenUtils {
                     connection.disconnect();
                 }
             }
-            return mavenArtifact == null ? null : mavenArtifact.getVersion();
+            return mavenArtifactDetails == null ? null : mavenArtifactDetails.getVersion();
         } else {
-            System.out.println("Maven artifact " + groupId + ":" + artifactId + " was last updated on " + mavenArtifact.getLastUpdated() + ". Not refreshing cache.");
-            return mavenArtifact.getVersion();
+            System.out.println("Maven artifact " + groupId + ":" + artifactId + " was last updated on " + mavenArtifactDetails.getLastUpdated() + ". Not refreshing cache.");
+            return mavenArtifactDetails.getVersion();
         }
     }
 }
