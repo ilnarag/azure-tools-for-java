@@ -15,6 +15,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.vfs.VirtualFile
 import com.microsoft.azure.toolkit.intellij.cloudshell.CloudShellService
+import com.microsoft.azure.toolkit.lib.common.messager.AzureMessager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -35,12 +36,17 @@ class UploadToCloudShellAction : AnAction() {
         val activeConnector = CloudShellService.getInstance(project).activeConnector() ?: return
 
         currentThreadCoroutineScope().launch(Dispatchers.EDT) {
-            val descriptor = FileChooserDescriptor(true, false, false, true, false, true).apply {
+            val descriptor = FileChooserDescriptor(true, false, true, true, false, true).apply {
                 title = "Select File(s) To Upload To Azure Cloud Shell"
             }
             FileChooser.chooseFiles(descriptor, project, null, null, object : FileChooser.FileChooserConsumer {
-                override fun consume(files: MutableList<VirtualFile>) = files.forEach {
-                    activeConnector.uploadFile(it.name, it)
+                override fun consume(files: MutableList<VirtualFile>) {
+                    files.forEach { activeConnector.uploadFile(it.name, it) }
+                    val message = if (files.size > 1) String.format(
+                        "Selected %d files has been uploaded to Azure Cloud Shell",
+                        files.size
+                    ) else String.format("'%s' has been uploaded to Azure Cloud Shell", files.get(0).name)
+                    AzureMessager.getMessager().info(message)
                 }
 
                 override fun cancelled() {
