@@ -40,13 +40,8 @@ class UploadToCloudShellAction : AnAction() {
                 title = "Select File(s) To Upload To Azure Cloud Shell"
             }
             FileChooser.chooseFiles(descriptor, project, null, null, object : FileChooser.FileChooserConsumer {
-                override fun consume(files: MutableList<VirtualFile>) {
-                    files.forEach { activeConnector.uploadFile(it.name, it) }
-                    val message = if (files.size > 1) String.format(
-                        "Selected %d files has been uploaded to Azure Cloud Shell",
-                        files.size
-                    ) else String.format("'%s' has been uploaded to Azure Cloud Shell", files.get(0).name)
-                    AzureMessager.getMessager().info(message)
+                override fun consume(files: MutableList<VirtualFile>) = files.forEach {
+                    activeConnector.uploadFile(it.name, it)
                 }
 
                 override fun cancelled() {
