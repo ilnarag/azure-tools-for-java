@@ -11,6 +11,7 @@ import com.jediterm.terminal.TtyConnector;
 import com.microsoft.azure.toolkit.ide.common.action.ResourceCommonActionsContributor;
 import com.microsoft.azure.toolkit.intellij.common.TerminalUtils;
 import com.microsoft.azure.toolkit.lib.appservice.model.OperatingSystem;
+import com.microsoft.azure.toolkit.lib.appservice.model.Runtime;
 import com.microsoft.azure.toolkit.lib.appservice.webapp.WebApp;
 import com.microsoft.azure.toolkit.lib.common.action.Action;
 import com.microsoft.azure.toolkit.lib.common.action.AzureActionManager;
@@ -30,6 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractList;
+import java.util.Optional;
 
 import static com.microsoft.azure.toolkit.intellij.common.AzureBundle.message;
 import static com.microsoft.azure.toolkit.lib.common.operation.OperationBundle.description;
@@ -70,7 +72,7 @@ public class SSHIntoWebAppAction {
         final AzureString title = description("user/webapp.connect_ssh.app", webAppName);
         AzureTaskManager.getInstance().runInBackground(new AzureTask<>(project, title, false,
                 () -> {
-                    if (webApp.getRuntime().getOperatingSystem() == OperatingSystem.WINDOWS) {
+                    if (Optional.ofNullable(webApp.getRuntime()).map(Runtime::getOperatingSystem).orElse(null) == OperatingSystem.WINDOWS) {
                         AzureMessager.getMessager().warning(message("webapp.ssh.windowsNotSupport"));
                         return;
                     }
