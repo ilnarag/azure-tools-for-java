@@ -9,21 +9,21 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A model class to represent an outdated dependency and a list of suggested replacements.
+ * A model class to represent a deprecated dependency and a list of suggested replacements.
  */
-public class OutdatedDependency {
+public class DeprecatedDependency {
     @JsonProperty
-    private final String outdatedDependency;
+    private final String deprecatedDependency;
     @JsonProperty
     private final List<String> suggestedReplacements;
 
     /**
-     * Creates an instance of {@link OutdatedDependency}.
-     * @param outdatedDependency The group, artifact and version string.
+     * Creates an instance of {@link DeprecatedDependency}.
+     * @param deprecatedDependency The group, artifact and version string.
      * @param suggestedReplacements The suggested replacement for the outdated dependency.
      */
-    public OutdatedDependency(final String outdatedDependency, final List<String> suggestedReplacements) {
-        this.outdatedDependency = outdatedDependency;
+    public DeprecatedDependency(final String deprecatedDependency, final List<String> suggestedReplacements) {
+        this.deprecatedDependency = deprecatedDependency;
         this.suggestedReplacements = suggestedReplacements;
     }
 
@@ -31,8 +31,8 @@ public class OutdatedDependency {
      * Returns the group, artifact and version string for the outdated dependency.
      * @return The group, artifact and version string.
      */
-    public String getOutdatedDependency() {
-        return outdatedDependency;
+    public String getDeprecatedDependency() {
+        return deprecatedDependency;
     }
 
     /**
@@ -51,12 +51,12 @@ public class OutdatedDependency {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final OutdatedDependency that = (OutdatedDependency) o;
-        return outdatedDependency.equals(that.outdatedDependency);
+        final DeprecatedDependency that = (DeprecatedDependency) o;
+        return deprecatedDependency.equals(that.deprecatedDependency);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(outdatedDependency);
+        return Objects.hash(deprecatedDependency);
     }
 }

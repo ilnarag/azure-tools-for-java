@@ -6,6 +6,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Nullable;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,7 +32,12 @@ public final class MavenUtils {
      * @return The latest version or {@code null} if an error occurred while retrieving the latest
      * version.
      */
+    @Nullable
     public static String getLatestArtifactVersion(String groupId, String artifactId) {
+        if(groupId == null || artifactId == null) {
+            return null;
+        }
+
         MavenArtifactDetails mavenArtifactDetails = MAVEN_ARTIFACTS.get(groupId + ":" + artifactId);
         if (mavenArtifactDetails == null || mavenArtifactDetails.getLastUpdated().isBefore(OffsetDateTime.now().minusDays(1))) {
             HttpURLConnection connection = null;

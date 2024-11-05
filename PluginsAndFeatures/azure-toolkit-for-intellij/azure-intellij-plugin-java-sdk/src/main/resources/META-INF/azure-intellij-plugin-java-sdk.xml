@@ -4,19 +4,7 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <localInspection
-                language="XML"
-                shortName="MavenProjectInspection"
-                displayName="Check Maven Project"
-                groupName="Maven"
-                enabledByDefault="true"
-                level="WARNING"
-                implementationClass="com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectInspection">
-            <class>com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectInspection</class>
-        </localInspection>
-
         <registryKey key="Azure SDK Report Enabled" description="Send Azure SDK Report to Microsoft" restartRequired="false" defaultValue="true"/>
         <postStartupActivity implementation="com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectReportGenerator"/>
-
     </extensions>
 </idea-plugin>

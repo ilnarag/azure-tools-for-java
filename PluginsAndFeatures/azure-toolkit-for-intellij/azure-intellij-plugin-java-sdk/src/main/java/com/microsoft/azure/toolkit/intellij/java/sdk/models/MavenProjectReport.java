@@ -25,22 +25,15 @@ public class MavenProjectReport {
     @JsonProperty
     private List<String> azureDependencies;
     @JsonProperty
-    private List<OutdatedDependency> outdatedDirectDependencies;
+    private List<DeprecatedDependency> deprecatedDependencies;
     @JsonProperty
-    private List<OutdatedDependency> outdatedTransitiveDependencies;
+    private List<DeprecatedDependency> deprecatedTransitiveDependencies;
     @JsonProperty
     private List<MethodCallDetails> serviceMethodCalls;
     @JsonProperty
     private List<MethodCallDetails> betaMethodCalls;
     @JsonProperty
-    private final List<Error> errors;
-
-    /**
-     * Creates an instance of {@link MavenProjectReport}.
-     */
-    public MavenProjectReport() {
-        this.errors = new ArrayList<>();
-    }
+    private List<Error> errors;
 
     /**
      * Returns the list of build errors.
@@ -49,6 +42,29 @@ public class MavenProjectReport {
      */
     public List<Error> getErrors() {
         return errors;
+    }
+
+    public void setErrors(List<Error> errors) {
+        this.errors = errors;
+    }
+
+    public void addErrors(List<Error> errors) {
+        if (this.errors == null) {
+            this.errors = new ArrayList<>();
+        }
+        this.errors.addAll(errors);
+    }
+
+    /**
+     * Adds a build error to the report.
+     *
+     * @param error The build error to add.
+     */
+    public void addError(Error error) {
+        if (this.errors == null) {
+            this.errors = new ArrayList<>();
+        }
+        this.errors.add(error);
     }
 
     /**
@@ -61,21 +77,12 @@ public class MavenProjectReport {
     }
 
     /**
-     * The list of Azure dependencis used by the project.
+     * The list of Azure dependencies used by the project.
      *
      * @return The list of Azure dependencies used by the project.
      */
     public List<String> getAzureDependencies() {
         return this.azureDependencies;
-    }
-
-    /**
-     * Adds a build error to the report.
-     *
-     * @param error The build error to add.
-     */
-    public void addError(Error error) {
-        errors.add(error);
     }
 
     /**
@@ -87,6 +94,20 @@ public class MavenProjectReport {
         this.serviceMethodCalls = serviceMethodCalls;
     }
 
+    public void addServiceMethodCall(MethodCallDetails serviceMethodCall) {
+        if (this.serviceMethodCalls == null) {
+            this.serviceMethodCalls = new ArrayList<>();
+        }
+        this.serviceMethodCalls.add(serviceMethodCall);
+    }
+
+    public void addAllServiceMethodCalls(List<MethodCallDetails> serviceMethodCalls) {
+        if (this.serviceMethodCalls == null) {
+            this.serviceMethodCalls = new ArrayList<>();
+        }
+        this.serviceMethodCalls.addAll(serviceMethodCalls);
+    }
+
     /**
      * Sets the list of beta method calls.
      *
@@ -96,13 +117,41 @@ public class MavenProjectReport {
         this.betaMethodCalls = betaMethodCalls;
     }
 
+    public void addBetaMethodCall(MethodCallDetails betaMethodCall) {
+        if (this.betaMethodCalls == null) {
+            this.betaMethodCalls = new ArrayList<>();
+        }
+        this.betaMethodCalls.add(betaMethodCall);
+    }
+
+    public void addAllBetaMethodCalls(List<MethodCallDetails> betaMethodCalls) {
+        if (this.betaMethodCalls == null) {
+            this.betaMethodCalls = new ArrayList<>();
+        }
+        this.betaMethodCalls.addAll(betaMethodCalls);
+    }
+
     /**
      * Sets the list of outdated direct dependencies.
      *
-     * @param outdatedDirectDependencies the outdatedDirectDependencies to set
+     * @param deprecatedDependencies the outdatedDirectDependencies to set
      */
-    public void setOutdatedDirectDependencies(List<OutdatedDependency> outdatedDirectDependencies) {
-        this.outdatedDirectDependencies = outdatedDirectDependencies;
+    public void setDeprecatedDependencies(List<DeprecatedDependency> deprecatedDependencies) {
+        this.deprecatedDependencies = deprecatedDependencies;
+    }
+
+    public void addDeprecatedDependency(DeprecatedDependency deprecatedDependency) {
+        if (this.deprecatedDependencies == null) {
+            this.deprecatedDependencies = new ArrayList<>();
+        }
+        this.deprecatedDependencies.add(deprecatedDependency);
+    }
+
+    public void addAllDeprecatedDependencies(List<DeprecatedDependency> deprecatedDependencies) {
+        if (this.deprecatedDependencies == null) {
+            this.deprecatedDependencies = new ArrayList<>();
+        }
+        this.deprecatedDependencies.addAll(deprecatedDependencies);
     }
 
     /**
@@ -110,17 +159,17 @@ public class MavenProjectReport {
      *
      * @return the outdated direct dependencies.
      */
-    public List<OutdatedDependency> getOutdatedDirectDependencies() {
-        return outdatedDirectDependencies;
+    public List<DeprecatedDependency> getDeprecatedDependencies() {
+        return deprecatedDependencies;
     }
 
     /**
      * Sets the list of outdated transitive dependencies.
      *
-     * @param outdatedTransitiveDependencies the outdated transitive dependencies to set
+     * @param deprecatedTransitiveDependencies the outdated transitive dependencies to set
      */
-    public void setOutdatedTransitiveDependencies(List<OutdatedDependency> outdatedTransitiveDependencies) {
-        this.outdatedTransitiveDependencies = outdatedTransitiveDependencies;
+    public void setDeprecatedTransitiveDependencies(List<DeprecatedDependency> deprecatedTransitiveDependencies) {
+        this.deprecatedTransitiveDependencies = deprecatedTransitiveDependencies;
     }
 
     /**
@@ -128,8 +177,8 @@ public class MavenProjectReport {
      *
      * @return the outdated transitive dependencies.
      */
-    public List<OutdatedDependency> getOutdatedTransitiveDependencies() {
-        return outdatedTransitiveDependencies;
+    public List<DeprecatedDependency> getDeprecatedTransitiveDependencies() {
+        return deprecatedTransitiveDependencies;
     }
 
     /**
@@ -148,6 +197,20 @@ public class MavenProjectReport {
      */
     public void setAzureDependencies(List<String> azureDependencies) {
         this.azureDependencies = azureDependencies;
+    }
+
+    public void addAzureDependency(String azureDependency) {
+        if (this.azureDependencies == null) {
+            this.azureDependencies = new ArrayList<>();
+        }
+        this.azureDependencies.add(azureDependency);
+    }
+
+    public void addAllAzureDependencies(List<String> azureDependencies) {
+        if (this.azureDependencies == null) {
+            this.azureDependencies = new ArrayList<>();
+        }
+        this.azureDependencies.addAll(azureDependencies);
     }
 
     /**
@@ -239,8 +302,8 @@ public class MavenProjectReport {
                 && Objects.equals(version, that.version)
                 && Objects.equals(bomVersion, that.bomVersion)
                 && Objects.equals(azureDependencies, that.azureDependencies)
-                && Objects.equals(outdatedDirectDependencies, that.outdatedDirectDependencies)
-                && Objects.equals(outdatedTransitiveDependencies, that.outdatedTransitiveDependencies)
+                && Objects.equals(deprecatedDependencies, that.deprecatedDependencies)
+                && Objects.equals(deprecatedTransitiveDependencies, that.deprecatedTransitiveDependencies)
                 && Objects.equals(serviceMethodCalls, that.serviceMethodCalls)
                 && Objects.equals(betaMethodCalls, that.betaMethodCalls)
                 && Objects.equals(errors, that.errors);
@@ -248,7 +311,8 @@ public class MavenProjectReport {
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupId, artifactId, version, bomVersion, azureDependencies, outdatedDirectDependencies,
-                outdatedTransitiveDependencies, serviceMethodCalls, betaMethodCalls, errors);
+        return Objects.hash(groupId, artifactId, version, bomVersion, azureDependencies, deprecatedDependencies,
+                deprecatedTransitiveDependencies, serviceMethodCalls, betaMethodCalls, errors);
     }
+
 }
