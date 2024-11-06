@@ -3,6 +3,7 @@
 All notable changes to "Azure Toolkit for IntelliJ IDEA" will be documented in this file.
 
 - [Change Log](#change-log)
+  - [3.93.0](#3930)
   - [3.92.0](#3920)
   - [3.91.0](#3910)
   - [3.90.0](#3900)
@@ -113,6 +114,10 @@ All notable changes to "Azure Toolkit for IntelliJ IDEA" will be documented in t
   - [3.0.8](#308)
   - [3.0.7](#307)
   - [3.0.6](#306)
+
+## 3.93.0
+- Support IntelliJ 2024.3 Beta
+- Support Azure Cloud Shell (Thanks for @rafaelldi)
 
 ## 3.92.0
 - Added Managed identity support for Azure Functions.
