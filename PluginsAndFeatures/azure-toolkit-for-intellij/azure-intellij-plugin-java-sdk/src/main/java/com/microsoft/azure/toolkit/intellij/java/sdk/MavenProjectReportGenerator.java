@@ -31,6 +31,7 @@ import com.microsoft.azure.toolkit.intellij.java.sdk.utils.DeprecatedDependencyU
 import com.microsoft.azure.toolkit.intellij.java.sdk.utils.MavenUtils;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.project.MavenProject;
@@ -48,8 +49,9 @@ import java.util.stream.Collectors;
  * This class creates a scheduled executor that periodically generates a project report that contains information about
  * Azure SDK dependency, client method usage and sends the report to Application Insights.
  * This report generation is enabled, by default and can be disabled at anytime by the end user by turning off the
- * "Azure SDK Report Enabled" registry toggle.
+ * "Azure SDK Report Enabled" registry toggle. This report is only generated for Maven projects.
  */
+@Slf4j
 public final class MavenProjectReportGenerator implements ProjectActivity, DumbAware, ProjectManagerListener {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -64,7 +66,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<>() {
     };
     private static final int INITIAL_DELAY_IN_MINUTES = 1;
-    private static final int FIXED_DELAY_IN_MINUTES = 1;
+    private static final int FIXED_DELAY_IN_MINUTES = 10;
     private static final String AZURE_SDK_BOM = "azure-sdk-bom";
 
     private final Map<String, MavenProjectReport> currentProjectReports;
@@ -98,23 +100,27 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                     return;
                 }
 
+                // A single IntelliJ project can contain multiple root projects. Create
+                // separate reports for each root Maven project. A root Maven project can consist of multiple
+                // Maven modules.
                 final Map<String, MavenProjectReport> projectReports = createProjectReports(project);
+
                 for (final Map.Entry<String, MavenProjectReport> entry : projectReports.entrySet()) {
                     final String key = entry.getKey();
                     final MavenProjectReport value = entry.getValue();
                     if (currentProjectReports.containsKey(key) && currentProjectReports.get(key).equals(value)) {
-                        System.out.println("No changes to " + key + " report. Not sending to app insights");
+                        log.info("No changes to " + key + " report. Not sending to app insights");
                         continue;
                     }
-                    System.out.println("Report for " + key + ": " + OBJECT_MAPPER.writeValueAsString(value));
+                    log.debug("Report for " + key + ": " + OBJECT_MAPPER.writeValueAsString(value));
                     sendReportToAppInsights(value);
                     currentProjectReports.put(key, value);
                 }
             } catch (final Exception e) {
-                System.out.println("Unable to send the Azure SDK report " + e.getMessage());
+                log.error("Unable to send the Azure SDK report ", e);
             }
         } else {
-            System.out.println("Azure SDK Report generation is disabled");
+            log.debug("Azure SDK Report generation is disabled");
         }
     }
 
@@ -131,6 +137,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                                          Map<String, MavenProjectReport> projectReports) {
         final MavenProjectReport report = new MavenProjectReport();
         projectReports.put(mavenProject.getMavenId().getDisplayString(), report);
+
         report.setGroupId(getMd5(mavenProject.getMavenId().getGroupId()));
         report.setArtifactId(getMd5(mavenProject.getMavenId().getArtifactId()));
         report.setVersion(getMd5(mavenProject.getMavenId().getVersion()));
@@ -144,7 +151,6 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     }
 
     private void analyzeMavenModule(MavenProjectsManager mavenProjectsManager, MavenProject mavenProject, MavenProjectReport report) {
-        System.out.println("Analyzing maven module " + mavenProject.getMavenId().getDisplayString());
         analyzePom(mavenProjectsManager, mavenProject, report);
         analyzeCode(mavenProjectsManager, mavenProject, report);
     }
@@ -161,8 +167,9 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                     final String artifactId = dependency.getArtifactId();
                     final String versionId = dependency.getVersion();
 
-                    final Optional<DeprecatedDependency> outdatedDependency = DeprecatedDependencyUtil.lookupReplacement(groupId, artifactId);
-                    outdatedDependency.ifPresent(deprecatedDependencies::add);
+                    final Optional<DeprecatedDependency> deprecatedDependency = DeprecatedDependencyUtil.lookupReplacement(groupId, artifactId);
+                    deprecatedDependency.ifPresent(deprecatedDependencies::add);
+
                     if (AZURE_GROUP_ID.equals(groupId)) {
                         azureDependencies.add(dependency.getMavenId().getDisplayString());
                     }
@@ -197,7 +204,7 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
 
         for (final VirtualFile javaFile : javaFiles) {
             final PsiFile psiFile = ApplicationManager.getApplication()
-                    .runReadAction((Computable<PsiFile>)() -> PsiManager.getInstance(mavenProjectsManager.getProject()).findFile(javaFile));
+                    .runReadAction((Computable<PsiFile>) () -> PsiManager.getInstance(mavenProjectsManager.getProject()).findFile(javaFile));
             if (psiFile != null) {
                 final Collection<PsiMethodCallExpression> methodCalls =
                         ApplicationManager.getApplication()
@@ -235,9 +242,9 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
             telemetry.getProperties().putAll(getCustomEventProperties(report));
             telemetryClient.track(telemetry);
             telemetryClient.flush();
-            System.out.println("Successfully sent the report to Application Insights");
+            log.info("Successfully sent the report to Application Insights");
         } catch (final Exception ex) {
-            System.out.println("Unable to send report to Application Insights. " + ex.getMessage());
+            log.error("Unable to send report to Application Insights. " + ex.getMessage());
         }
     }
 
