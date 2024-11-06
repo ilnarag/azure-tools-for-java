@@ -15,6 +15,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor
 import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.vfs.VirtualFile
 import com.microsoft.azure.toolkit.intellij.cloudshell.CloudShellService
+import com.microsoft.azure.toolkit.lib.common.messager.AzureMessager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -35,7 +36,7 @@ class UploadToCloudShellAction : AnAction() {
         val activeConnector = CloudShellService.getInstance(project).activeConnector() ?: return
 
         currentThreadCoroutineScope().launch(Dispatchers.EDT) {
-            val descriptor = FileChooserDescriptor(true, false, false, true, false, true).apply {
+            val descriptor = FileChooserDescriptor(true, false, true, true, false, true).apply {
                 title = "Select File(s) To Upload To Azure Cloud Shell"
             }
             FileChooser.chooseFiles(descriptor, project, null, null, object : FileChooser.FileChooserConsumer {

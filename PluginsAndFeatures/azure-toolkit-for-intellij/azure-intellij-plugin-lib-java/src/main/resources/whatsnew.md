@@ -1,5 +1,10 @@
 <!-- Version: 3.88.0 -->
 # What's new in Azure Toolkit for IntelliJ
+
+## 3.93.0
+- Support IntelliJ 2024.3 Beta
+- Support Azure Cloud Shell (Thanks for @rafaelldi)
+
 ## 3.92.0
 - Added Managed identity support for Azure Functions.
 - Fixed [#8473](https://github.com/microsoft/azure-tools-for-java/issues/8473): Class initialization must not depend on services. Consider using instance of the service on-demand instead.

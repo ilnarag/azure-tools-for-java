@@ -27,11 +27,10 @@
   <change-notes>
     <![CDATA[
     <html>
-      <h2 id="3-92-0">3.92.0</h2>
+      <h2 id="3-93-0">3.93.0</h2>
       <ul>
-      <li>Added Managed identity support for Azure Functions.</li>
-      <li>Fixed <a href="https://github.com/microsoft/azure-tools-for-java/issues/8473">#8473</a>: Class initialization must not depend on services. Consider using instance of the service on-demand instead.</li>
-      <li>Fixed <a href="https://github.com/microsoft/azure-tools-for-java/issues/8497">#8497</a>: fix support for swap.</li>
+      <li>Support IntelliJ 2024.3 Beta</li>
+      <li>Support Azure Cloud Shell (Thanks for @rafaelldi)</li>
       </ul>
       <p>You may get the full change log <a href="https://github.com/Microsoft/azure-tools-for-java/blob/develop/CHANGELOG.md">here</a></p>
     </html>
