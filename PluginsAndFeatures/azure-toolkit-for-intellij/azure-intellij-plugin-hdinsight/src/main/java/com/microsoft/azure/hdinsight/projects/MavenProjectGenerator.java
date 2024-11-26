@@ -218,8 +218,13 @@ public class MavenProjectGenerator {
 
         manager.addManagedFiles(Collections.singletonList(pom));
 
-        return manager.scheduleImportAndResolve()
-                .then(modules -> manager.findProject(module));
+        manager.forceUpdateAllProjectsOrFindAllAvailablePomFiles();
+
+        return Promises.resolvedPromise()
+                .then(o -> {
+                    MavenProject mavenProject = manager.findProject(this.module);
+                    return mavenProject;
+                });
     }
 
     /**
