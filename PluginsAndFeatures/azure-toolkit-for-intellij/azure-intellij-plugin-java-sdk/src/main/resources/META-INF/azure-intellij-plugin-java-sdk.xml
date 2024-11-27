@@ -4,7 +4,6 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <registryKey key="Azure SDK Report Enabled" description="Send Azure SDK Report to Microsoft" restartRequired="false" defaultValue="true"/>
         <postStartupActivity implementation="com.microsoft.azure.toolkit.intellij.java.sdk.MavenProjectReportGenerator"/>
     </extensions>
 </idea-plugin>

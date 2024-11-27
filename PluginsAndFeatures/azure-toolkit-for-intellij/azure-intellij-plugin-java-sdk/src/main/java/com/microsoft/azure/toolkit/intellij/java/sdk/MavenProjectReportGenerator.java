@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.StdLanguages;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
@@ -14,12 +13,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.startup.ProjectActivity;
 import com.intellij.openapi.util.Computable;
-import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
-import com.intellij.psi.search.FileTypeIndex;
-import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.search.searches.AllClassesSearch;
+import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.xml.XmlFile;
 import com.intellij.psi.xml.XmlTag;
 import com.microsoft.applicationinsights.TelemetryClient;
@@ -27,8 +24,12 @@ import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.telemetry.EventTelemetry;
 import com.microsoft.azure.toolkit.intellij.java.sdk.models.Error;
 import com.microsoft.azure.toolkit.intellij.java.sdk.models.*;
+import com.microsoft.azure.toolkit.intellij.java.sdk.utils.AzureSearchScope;
 import com.microsoft.azure.toolkit.intellij.java.sdk.utils.DeprecatedDependencyUtil;
+import com.microsoft.azure.toolkit.intellij.java.sdk.utils.MavenRootProjectScope;
 import com.microsoft.azure.toolkit.intellij.java.sdk.utils.MavenUtils;
+import com.microsoft.azure.toolkit.lib.Azure;
+import com.microsoft.azure.toolkit.lib.AzureConfiguration;
 import kotlin.Unit;
 import kotlin.coroutines.Continuation;
 import lombok.extern.slf4j.Slf4j;
@@ -66,10 +67,10 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<>() {
     };
     private static final int INITIAL_DELAY_IN_MINUTES = 1;
-    private static final int FIXED_DELAY_IN_MINUTES = 10;
     private static final String AZURE_SDK_BOM = "azure-sdk-bom";
+    private static final String SERVICE_METHOD_ANNOTATION = "com.azure.core.annotation.ServiceMethod";
+    private static final String BETA_METHOD_ANNOTATION = "com.azure.cosmos.util.Beta";
 
-    private final Map<String, MavenProjectReport> currentProjectReports;
     private final TelemetryClient telemetryClient;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -77,13 +78,12 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         final TelemetryConfiguration configuration = TelemetryConfiguration.createDefault();
         configuration.setConnectionString(APP_INSIGHTS_CONNECTION_STRING);
         telemetryClient = new TelemetryClient(configuration);
-        this.currentProjectReports = new HashMap<>();
     }
 
     @Nullable
     @Override
     public Object execute(@Nonnull Project project, @Nonnull Continuation<? super Unit> continuation) {
-        scheduledExecutor.scheduleWithFixedDelay(() -> generateReport(project), INITIAL_DELAY_IN_MINUTES, FIXED_DELAY_IN_MINUTES, TimeUnit.MINUTES);
+        scheduledExecutor.schedule(() -> generateReport(project), INITIAL_DELAY_IN_MINUTES, TimeUnit.MINUTES);
         return null;
     }
 
@@ -93,13 +93,13 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
     }
 
     private void generateReport(@Nonnull Project project) {
-        if (Registry.is(AZURE_SDK_REPORT_ENABLED, true)) {
+        final AzureConfiguration config = Azure.az().config();
+        if (config.getTelemetryEnabled() == null || config.getTelemetryEnabled()) {
             try {
                 final MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstanceIfCreated(project);
                 if (mavenProjectsManager == null || !mavenProjectsManager.isMavenizedProject()) {
                     return;
                 }
-
                 // A single IntelliJ project can contain multiple root projects. Create
                 // separate reports for each root Maven project. A root Maven project can consist of multiple
                 // Maven modules.
@@ -108,19 +108,14 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
                 for (final Map.Entry<String, MavenProjectReport> entry : projectReports.entrySet()) {
                     final String key = entry.getKey();
                     final MavenProjectReport value = entry.getValue();
-                    if (currentProjectReports.containsKey(key) && currentProjectReports.get(key).equals(value)) {
-                        log.info("No changes to " + key + " report. Not sending to app insights");
-                        continue;
-                    }
                     log.debug("Report for " + key + ": " + OBJECT_MAPPER.writeValueAsString(value));
                     sendReportToAppInsights(value);
-                    currentProjectReports.put(key, value);
                 }
             } catch (final Exception e) {
                 log.error("Unable to send the Azure SDK report ", e);
             }
         } else {
-            log.debug("Azure SDK Report generation is disabled");
+            log.debug("Azure telemetry is disabled");
         }
     }
 
@@ -148,11 +143,12 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         } else {
             analyzeMavenModule(mavenProjectsManager, mavenProject, report);
         }
+        // code analysis doesn't have to be per module and can be done on the entire Maven Project
+        analyzeCode(mavenProjectsManager, mavenProject, report);
     }
 
     private void analyzeMavenModule(MavenProjectsManager mavenProjectsManager, MavenProject mavenProject, MavenProjectReport report) {
         analyzePom(mavenProjectsManager, mavenProject, report);
-        analyzeCode(mavenProjectsManager, mavenProject, report);
     }
 
     private void analyzePom(MavenProjectsManager mavenProjectsManager, MavenProject mavenProject, MavenProjectReport report) {
@@ -197,43 +193,42 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         if (module == null) {
             return;
         }
-
-        final Collection<VirtualFile> javaFiles = ApplicationManager.getApplication()
-                .runReadAction((Computable<Collection<VirtualFile>>) () -> FileTypeIndex
-                        .getFiles(JavaFileType.INSTANCE, GlobalSearchScope.moduleScope(module)));
-
-        for (final VirtualFile javaFile : javaFiles) {
-            final PsiFile psiFile = ApplicationManager.getApplication()
-                    .runReadAction((Computable<PsiFile>) () -> PsiManager.getInstance(mavenProjectsManager.getProject()).findFile(javaFile));
-            if (psiFile != null) {
-                final Collection<PsiMethodCallExpression> methodCalls =
-                        ApplicationManager.getApplication()
-                                .runReadAction((Computable<Collection<PsiMethodCallExpression>>) () ->
-                                        PsiTreeUtil.findChildrenOfType(psiFile, PsiMethodCallExpression.class));
-                methodCalls.forEach(methodCall -> {
-                    final PsiMethod psiMethod = ApplicationManager.getApplication()
-                            .runReadAction((Computable<PsiMethod>) methodCall::resolveMethod);
-                    final PsiAnnotation[] annotations = psiMethod.getAnnotations();
-                    Arrays.stream(annotations).forEach(annotation -> {
-                        analyzeMethodCall(annotation, psiMethod, methodCallFrequency, betaMethodCallFrequency);
-                    });
-                });
+        final Project project = mavenProjectsManager.getProject();
+        // Search for all methods in the library with the target annotation
+        final AzureSearchScope azureSearchScope = new AzureSearchScope(project);
+        final Collection<PsiClass> classes = AllClassesSearch.search(azureSearchScope, project).findAll();
+        for (final PsiClass psiClass : classes) {
+            for (final PsiMethod method : psiClass.getMethods()) {
+                final MethodCallDetails serviceMethodCall = findAnnotatedMethodCalls(mavenProject, report, method, project, SERVICE_METHOD_ANNOTATION);
+                if (serviceMethodCall != null) {
+                    report.addServiceMethodCall(serviceMethodCall);
+                }
+                final MethodCallDetails betaMethodCall = findAnnotatedMethodCalls(mavenProject, report, method, project, BETA_METHOD_ANNOTATION);
+                if (betaMethodCall != null) {
+                    report.addBetaMethodCall(betaMethodCall);
+                }
             }
         }
+    }
 
-        final List<MethodCallDetails> methodCallDetails = methodCallFrequency.entrySet().stream()
-                .map(entry -> new MethodCallDetails()
-                        .setMethodName(entry.getKey())
-                        .setCallFrequency(entry.getValue()))
-                .toList();
-        report.addAllServiceMethodCalls(methodCallDetails);
-
-        final List<MethodCallDetails> betaMethodCalls = betaMethodCallFrequency.entrySet().stream()
-                .map(entry -> new MethodCallDetails()
-                        .setMethodName(entry.getKey())
-                        .setCallFrequency(entry.getValue()))
-                .toList();
-        report.addAllBetaMethodCalls(betaMethodCalls);
+    @Nullable
+    private MethodCallDetails findAnnotatedMethodCalls(MavenProject mavenProject, MavenProjectReport report,
+                                                       PsiMethod method, Project project, String annotation) {
+        final PsiAnnotation psiAnnotation = method.getAnnotation(annotation);
+        if (psiAnnotation != null) {
+            // Annotated method found; search for references
+            final Collection<PsiReference> references = ReferencesSearch.search(method, new MavenRootProjectScope(project, mavenProject)).findAll();
+            if (!references.isEmpty()) {
+                final String methodName = method.getContainingClass().getQualifiedName() + "." + method.getName();
+                final String returnType = method.getReturnType().getCanonicalText();
+                final String params = Arrays.stream(method.getParameterList().getParameters())
+                        .map(parameter -> parameter.getType().getCanonicalText())
+                        .collect(Collectors.joining(","));
+                final String methodSignature = returnType + " " + methodName + "(" + params + ")";
+                return new MethodCallDetails().setCallFrequency(references.size()).setMethodName(methodSignature);
+            }
+        }
+        return null;
     }
 
     private void sendReportToAppInsights(MavenProjectReport report) {
@@ -263,21 +258,6 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         return customEventProperties;
     }
 
-    private void analyzeMethodCall(PsiAnnotation annotation, PsiMethod psiMethod, Map<String, Integer> methodCallFrequency, Map<String, Integer> betaMethodCallFrequency) {
-        final String methodName = psiMethod.getName();
-        final String returnType = psiMethod.getReturnType().getCanonicalText();
-        final String params = Arrays.stream(psiMethod.getParameterList().getParameters())
-                .map(parameter -> parameter.getType().getCanonicalText())
-                .collect(Collectors.joining(","));
-        final String methodSignature = returnType + " " + methodName + "(" + params + ")";
-        if (Objects.equals(annotation.getQualifiedName(), "com.azure.core.annotation.ServiceMethod")) {
-            methodCallFrequency.compute(methodSignature, (k, v) -> v == null ? 1 : v + 1);
-        }
-        if (Objects.equals(annotation.getQualifiedName(), "com.azure.cosmos.util.Beta")) {
-            betaMethodCallFrequency.compute(methodSignature, (k, v) -> v == null ? 1 : v + 1);
-        }
-    }
-
     private void checkDependencyManagement(MavenProjectsManager mavenProjectsManager, MavenProject mavenProject, MavenProjectReport report) {
         final VirtualFile pomFile = mavenProject.getFile();
         final PsiFile psiFile = ApplicationManager.getApplication()
@@ -287,7 +267,8 @@ public final class MavenProjectReportGenerator implements ProjectActivity, DumbA
         }
         final FileViewProvider viewProvider = psiFile.getViewProvider();
         final XmlFile xmlFile = (XmlFile) viewProvider.getPsi(StdLanguages.XML);
-        final XmlTag rootTag = xmlFile.getRootTag();
+        final XmlTag rootTag = ApplicationManager.getApplication()
+                .runReadAction((Computable<XmlTag>) xmlFile::getRootTag);
         if (rootTag != null && "project".equals(rootTag.getName())) {
             final XmlTag dependencyManagement = ApplicationManager.getApplication()
                     .runReadAction((Computable<XmlTag>) () -> rootTag.findFirstSubTag("dependencyManagement"));
