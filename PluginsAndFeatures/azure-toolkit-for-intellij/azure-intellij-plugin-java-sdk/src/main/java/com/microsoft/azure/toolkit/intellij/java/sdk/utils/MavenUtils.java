@@ -1,6 +1,7 @@
 package com.microsoft.azure.toolkit.intellij.java.sdk.utils;
 
 import com.microsoft.azure.toolkit.intellij.java.sdk.models.MavenArtifactDetails;
+import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -18,6 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 public final class MavenUtils {
     private static final Map<String, MavenArtifactDetails> MAVEN_ARTIFACTS = new ConcurrentHashMap<>();
 
@@ -83,10 +85,10 @@ public final class MavenUtils {
                         return latestVersion;
                     }
                 } else {
-                    System.out.println("Unable to get Maven metadata for " + artifactId + ": " + responseCode);
+                    log.warn("Unable to get Maven metadata for " + artifactId + ": " + responseCode);
                 }
             } catch (final ParserConfigurationException | IOException | SAXException exception) {
-                System.out.println("Error getting latest maven dependency version. " + exception.getMessage());
+                log.warn("Error getting latest maven dependency version. " + exception.getMessage());
             } finally {
                 if (connection != null) {
                     // closes the input streams and discards the socket
@@ -95,7 +97,7 @@ public final class MavenUtils {
             }
             return mavenArtifactDetails == null ? null : mavenArtifactDetails.getVersion();
         } else {
-            System.out.println("Maven artifact " + groupId + ":" + artifactId + " was last updated on " + mavenArtifactDetails.getLastUpdated() + ". Not refreshing cache.");
+            log.debug("Maven artifact " + groupId + ":" + artifactId + " was last updated on " + mavenArtifactDetails.getLastUpdated() + ". Not refreshing cache.");
             return mavenArtifactDetails.getVersion();
         }
     }
