@@ -129,9 +129,16 @@ class RunSparkScalaLocalConsoleAction : RunSparkScalaConsoleAction() {
         .libraries.firstOrNull { it.name?.endsWith(libraryCoord) == true }
 
     private fun promptAndFix(libraryCoord: String,project: Project) {
+
+        val paddedLibraryCoord = if (libraryCoord.length < 60) {
+            libraryCoord.padEnd(60, ' ')
+        } else {
+            libraryCoord
+        }
+
         val toFixDialog = object : ErrorWindow(
             project,
-            "The library $libraryCoord is not in project dependencies, would you like to auto fix it?",
+            "The library $paddedLibraryCoord is not in project dependencies, would you like to auto fix it?",
             "Auto fix dependency issue to confirm") {
             init {
                 setOKButtonText("Auto Fix")
